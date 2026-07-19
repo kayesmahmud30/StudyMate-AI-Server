@@ -10,7 +10,7 @@ export const getPublicRoadmaps = async (
 ) => {
   try {
     const db = getDB();
-    const { search, subject, difficulty, sort } = req.query as Record<string, string>;
+    const { search, subject, difficulty, sort, page, limit } = req.query as Record<string, string>;
 
     const filter: Record<string, any> = { isPublic: true };
     if (search) filter.title = { $regex: search, $options: "i" };
@@ -26,13 +26,31 @@ export const getPublicRoadmaps = async (
         ? { estimatedHours: -1 }
         : { createdAt: -1 };
 
+    // Pagination
+    const pageNum = parseInt(page) || 1;
+    const limitNum = parseInt(limit) || 8;
+    const skipNum = (pageNum - 1) * limitNum;
+
+    const totalCount = await db.collection("roadmaps").countDocuments(filter);
+
     const roadmaps = await db
       .collection("roadmaps")
       .find(filter)
       .sort(sortOption)
+      .skip(skipNum)
+      .limit(limitNum)
       .toArray();
 
-    res.json({ success: true, data: roadmaps });
+    res.json({
+      success: true,
+      data: roadmaps,
+      pagination: {
+        total: totalCount,
+        page: pageNum,
+        limit: limitNum,
+        pages: Math.ceil(totalCount / limitNum),
+      },
+    });
   } catch (error) {
     res.status(500).json({ success: false, error: "Failed to fetch roadmaps" });
   }
