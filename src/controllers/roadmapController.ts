@@ -152,10 +152,6 @@ export const deleteRoadmap = async (
     if (result.deletedCount === 0)
       return res.status(404).json({ success: false, error: "Roadmap not found or unauthorized" });
 
-    // Cascade: remove linked schedules and chats
-    await db.collection("schedules").deleteMany({ roadmapId: id });
-    await db.collection("chats").deleteMany({ roadmapId: id });
-
     res.json({ success: true, message: "Roadmap deleted successfully" });
   } catch (error) {
     res.status(500).json({ success: false, error: "Failed to delete roadmap" });
@@ -200,24 +196,6 @@ export const forkRoadmap = async (
   }
 };
 
-// ─── Get schedule for a roadmap ───────────────────────────────────────────────
-export const getSchedule = async (
-  req: AuthenticatedRequest,
-  res: Response
-) => {
-  try {
-    const db = getDB();
-    const userId = req.user?.sub;
-
-    const schedule = await db
-      .collection("schedules")
-      .findOne({ roadmapId: req.params.id, userId });
-
-    res.json({ success: true, data: schedule });
-  } catch (error) {
-    res.status(500).json({ success: false, error: "Failed to fetch schedule" });
-  }
-};
 
 // ─── Dashboard stats ──────────────────────────────────────────────────────────
 export const getDashboardStats = async (
@@ -228,9 +206,8 @@ export const getDashboardStats = async (
     const db = getDB();
     const userId = req.user?.sub;
 
-    const [roadmapCount, scheduleCount, totalHoursCursor] = await Promise.all([
+    const [roadmapCount, totalHoursCursor] = await Promise.all([
       db.collection("roadmaps").countDocuments({ userId }),
-      db.collection("schedules").countDocuments({ userId }),
       db
         .collection("roadmaps")
         .aggregate([
@@ -260,7 +237,6 @@ export const getDashboardStats = async (
       success: true,
       data: {
         totalRoadmaps: roadmapCount,
-        totalSchedules: scheduleCount,
         totalEstimatedHours: totalHoursCursor[0]?.total ?? 0,
         difficultyBreakdown,
         subjectBreakdown,

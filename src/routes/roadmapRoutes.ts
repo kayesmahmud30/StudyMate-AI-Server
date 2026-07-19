@@ -8,7 +8,6 @@ import {
   updateRoadmap,
   deleteRoadmap,
   forkRoadmap,
-  getSchedule,
   getDashboardStats,
 } from "../controllers/roadmapController";
 
@@ -21,7 +20,6 @@ router.get("/:id", getRoadmapById);
 // Protected routes
 router.get("/user/mine", verifyJWT, getMyRoadmaps);
 router.get("/user/stats", verifyJWT, getDashboardStats);
-router.get("/:id/schedule", verifyJWT, getSchedule);
 router.post("/", verifyJWT, createRoadmap);
 router.put("/:id", verifyJWT, updateRoadmap);
 router.delete("/:id", verifyJWT, deleteRoadmap);
